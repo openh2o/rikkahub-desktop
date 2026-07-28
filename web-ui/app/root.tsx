@@ -69,8 +69,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
         />
         <Meta />
         <Links />
+        {/* 内联 splash: WebView2 启动时在 JS 就绪前就有可见内容，避免白屏 */}
+        <style>{`
+          #splash{align-items:center;background:#fff;display:flex;inset:0;justify-content:center;position:fixed;z-index:9999;transition:opacity .3s}
+          @media(prefers-color-scheme:dark){#splash{background:#09090b}}
+          #splash.fade{opacity:0}
+          .sp-ld{display:flex;gap:6px}
+          .sp-dt{width:10px;height:10px;border-radius:50%;background:#a1a1aa;animation:sp-bnc 1.4s infinite both}
+          .sp-dt:nth-child(2){animation-delay:.16s}
+          .sp-dt:nth-child(3){animation-delay:.32s}
+          @keyframes sp-bnc{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
+        `}</style>
       </head>
       <body>
+        <div id="splash">
+          <div class="sp-ld">
+            <div class="sp-dt"></div>
+            <div class="sp-dt"></div>
+            <div class="sp-dt"></div>
+          </div>
+        </div>
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -230,6 +248,15 @@ function AppContent() {
     displaySetting?.chatFontFamilyCjkCss,
     displaySetting?.uiFontSize,
   ]);
+
+  // React 挂载后淡出 HTML 内联 splash，避免两个加载指示器叠在一起
+  React.useEffect(() => {
+    const el = document.getElementById('splash');
+    if (el && !el.classList.contains('fade')) {
+      el.classList.add('fade');
+      setTimeout(() => el.remove(), 400);
+    }
+  }, []);
 
   // Tauri's WebView2 swallows `window.open` and ignores `<a target="_blank">` by default —
   // links to external pages would do nothing. Intercept every left-click on an anchor that
