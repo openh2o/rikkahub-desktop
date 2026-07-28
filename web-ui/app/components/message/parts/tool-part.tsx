@@ -60,6 +60,7 @@ const TOOL_NAMES = {
   GET_TIME_INFO: "get_time_info",
   CLIPBOARD: "clipboard_tool",
   ASK_USER: "ask_user",
+  USE_SKILL: "use_skill",
 } as const;
 
 const MEMORY_ACTIONS = {
@@ -80,10 +81,6 @@ function safeJsonParse(input: string): unknown {
   } catch {
     return {};
   }
-}
-
-function toJsonString(value: unknown): string {
-  return JSON.stringify(value ?? {}, null, 2);
 }
 
 function getStringField(data: unknown, key: string): string | undefined {
@@ -286,17 +283,24 @@ function getToolTitle(toolName: string, args: unknown, t: TFunction): string {
 
   if (toolName === TOOL_NAMES.ASK_USER) return t("tool_part.ask_user_title");
 
+  if (toolName === TOOL_NAMES.USE_SKILL) {
+    const skillName = getStringField(args, "name");
+    return skillName
+      ? t("tool_part.use_skill_with_name", { skillName })
+      : t("tool_part.use_skill");
+  }
+
   return t("tool_part.tool_call_with_name", { toolName });
 }
 
-// issue3:工具结果常是纯文本(JSON.parse 失败回退原文)——此前对字符串再走 JSON.stringify,
-// 换行被转义成 \n 字面量,整段挤成一条超长单行只能横向滚动。字符串直接按原文
-// 渲染,对象保持缩进 JSON;pre-wrap + break-words 让长行折行,用足垂直空间。
-// maxHeightClass:卡片内联预览限高,抽屉里不限(外层容器自身可滚)。
-function JsonBlock({ value, maxHeightClass = "max-h-64" }: { value: unknown; maxHeightClass?: string }) {
+function JsonBlock({ value, maxHeightClass = "max-h-[60vh]" }: { value: unknown; maxHeightClass?: string }) {
   const text = typeof value === "string" ? value : toJsonString(value);
   return (
     <pre className={cn("overflow-y-auto whitespace-pre-wrap break-words rounded-md border bg-muted/30 p-3 text-xs", maxHeightClass)}>
+      {text}
+    </pre>
+  );
+}
       {text}
     </pre>
   );
@@ -815,6 +819,7 @@ export function ToolPart({
         direction={isMobile ? "bottom" : "right"}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
+        handleOnly
       >
         <DrawerContent>
           <DrawerHeader>
@@ -824,7 +829,10 @@ export function ToolPart({
             </DrawerDescription>
           </DrawerHeader>
 
-          <div className="flex-1 min-h-0 space-y-4 overflow-y-auto px-4 pb-6">
+          <div
+            className="flex-1 min-h-0 space-y-4 overflow-y-auto px-4 pb-6 select-text"
+            onPointerDown={(e) => e.stopPropagation()}
+          >
             {tool.toolName === TOOL_NAMES.SEARCH_WEB && isExecuted ? (
               <SearchWebPreview args={args} content={outputContent} />
             ) : tool.toolName === TOOL_NAMES.SCRAPE_WEB && isExecuted ? (

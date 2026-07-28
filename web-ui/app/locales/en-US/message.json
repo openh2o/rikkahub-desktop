@@ -96,6 +96,8 @@
     "clipboard_read": "Read clipboard",
     "clipboard_write": "Write clipboard",
     "tool_call_with_name": "Tool call: {{toolName}}",
+    "use_skill": "Load skill",
+    "use_skill_with_name": "Load skill: {{skillName}}",
     "search_query_label": "Query: {{query}}",
     "empty": "(empty)",
     "deny_reason_prompt": "Enter a rejection reason (optional)",
