@@ -415,8 +415,8 @@ function useDraftInputController({
     if (parts.length === 0) return;
 
     if (activeId) {
-      await api.post<{ status: string }>(`conversations/${activeId}/messages`, { parts });
       clearDraft(draftKey);
+      await api.post<{ status: string }>(`conversations/${activeId}/messages`, { parts });
       return;
     }
 
@@ -426,8 +426,8 @@ function useDraftInputController({
     // Send the message BEFORE setting activeId so the detail fetcher doesn't race
     // (`POST /messages` calls ensureConversation on the server; only then does the
     // subsequent `GET /api/conversations/{id}` succeed).
-    await api.post<{ status: string }>(`conversations/${conversationId}/messages`, { parts });
     clearDraft(draftKey);
+    await api.post<{ status: string }>(`conversations/${conversationId}/messages`, { parts });
 
     setActiveId(conversationId);
     navigate(`/c/${conversationId}`);

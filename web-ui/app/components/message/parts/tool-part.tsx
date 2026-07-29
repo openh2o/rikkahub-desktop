@@ -285,6 +285,10 @@ function getToolTitle(toolName: string, args: unknown, t: TFunction): string {
 
   if (toolName === TOOL_NAMES.USE_SKILL) {
     const skillName = getStringField(args, "name");
+    const skillPath = getStringField(args, "path");
+    if (skillName && skillPath) {
+      return t("tool_part.use_skill_with_name", { skillName: `${skillName}/${skillPath}` });
+    }
     return skillName
       ? t("tool_part.use_skill_with_name", { skillName })
       : t("tool_part.use_skill");
@@ -678,6 +682,7 @@ export function ToolPart({
       (Boolean(getStringField(outputContent, "answer")) ||
         getArrayField(outputContent, "items").length > 0)) ||
     (tool.toolName === TOOL_NAMES.SCRAPE_WEB && Boolean(getStringField(args, "url"))) ||
+    (tool.toolName === TOOL_NAMES.USE_SKILL && Boolean(getStringField(outputContent, "content"))) ||
     isDenied ||
     hasMediaOutput;
 
@@ -764,6 +769,21 @@ export function ToolPart({
               </div>
             )}
 
+            {tool.toolName === TOOL_NAMES.USE_SKILL && (getStringField(args, "path") || getStringField(outputContent, "content")) && (
+              <div className="space-y-1">
+                {getStringField(args, "path") && (
+                  <div className="text-muted-foreground text-xs truncate">
+                    {getStringField(args, "path")}
+                  </div>
+                )}
+                {getStringField(outputContent, "content") && (
+                  <div className="line-clamp-3 text-muted-foreground text-xs whitespace-pre-wrap">
+                    {getStringField(outputContent, "content")}
+                  </div>
+                )}
+              </div>
+            )}
+
             {isDenied && (
               <div className="text-destructive text-xs">
                 {deniedReason
@@ -837,6 +857,32 @@ export function ToolPart({
               <SearchWebPreview args={args} content={outputContent} />
             ) : tool.toolName === TOOL_NAMES.SCRAPE_WEB && isExecuted ? (
               <ScrapeWebPreview content={outputContent} />
+            ) : tool.toolName === TOOL_NAMES.USE_SKILL && isExecuted ? (
+              <div className="space-y-3">
+                <div>
+                  <div className="mb-1 text-muted-foreground text-xs">
+                    {t("tool_part.parameters")}
+                  </div>
+                  <JsonBlock value={args} />
+                </div>
+                {getStringField(outputContent, "content") ? (
+                  <div className="space-y-2">
+                    <div className="mb-1 text-muted-foreground text-xs">
+                      {t("tool_part.result")}
+                    </div>
+                    <div className="prose prose-sm dark:prose-invert max-w-none break-words">
+                      <Markdown content={getStringField(outputContent, "content") ?? ""} />
+                    </div>
+                  </div>
+                ) : outputText ? (
+                  <div className="space-y-2">
+                    <div className="mb-1 text-muted-foreground text-xs">
+                      {t("tool_part.result")}
+                    </div>
+                    <JsonBlock value={outputText} />
+                  </div>
+                ) : null}
+              </div>
             ) : (
               <div className="space-y-3">
                 <div>
